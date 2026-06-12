@@ -1,0 +1,20 @@
+[project]
+name = "quanttech100"
+version = "0.1.0"
+description = "Private quantitative research platform focused on reproducible statistical edge discovery."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "backend/tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true

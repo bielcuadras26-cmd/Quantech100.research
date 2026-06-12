@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Data and reports
+backend/data/raw/*
+backend/data/processed/*
+backend/data/market_cache/*
+backend/reports/*
+research/results/*
+!backend/data/raw/.gitkeep
+!backend/data/processed/.gitkeep
+!backend/data/market_cache/.gitkeep
+!backend/reports/.gitkeep
+!research/results/.gitkeep
+
+# OS and editors
+.DS_Store
+.idea/
+.vscode/
+
+# Node / frontend future
+node_modules/
+.next/
+dist/
+build/
+
+# Secrets and keys
+*.pem
+*.key
+*.crt
