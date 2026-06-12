@@ -84,11 +84,20 @@ Implemented foundation:
 
 ## Phase 3 - Indicator Engine
 
+Status: started.
+
 Core tasks:
 
 - Implement indicators with tests.
 - Prevent look-ahead bias.
 - Validate warmup behavior.
+
+Implemented foundation:
+
+- SMA, EMA, ATR, RSI, MACD, Bollinger Bands, Z-score, rolling volatility.
+- Momentum, returns, rolling correlation, moving-average slope.
+- Price-to-average distance in percent and ATR.
+- Rolling highs and lows.
 
 ## Phase 4 - Cost Model
 
