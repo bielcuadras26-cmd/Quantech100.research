@@ -10,3 +10,4 @@ All notable changes to QuantTech100 will be documented in this file.
 - Added initial backend package boundaries and smoke tests.
 - Added Phase 2 data loading and OHLCV validation foundation.
 - Added Phase 3 indicator engine foundation.
+- Added Phase 4 cost model foundation.

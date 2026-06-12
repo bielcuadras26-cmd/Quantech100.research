@@ -101,11 +101,19 @@ Implemented foundation:
 
 ## Phase 4 - Cost Model
 
+Status: started.
+
 Core tasks:
 
 - Asset-level cost config.
 - Gross-to-net conversion.
 - R-based cost reporting.
+
+Implemented foundation:
+
+- Spread, commission, slippage, fixed cost, and variable-rate costs.
+- Long and short gross result calculation.
+- Monetary total cost, net result, gross R, net R, and cost R.
 
 ## Phase 5 - Backtesting Engine
 
