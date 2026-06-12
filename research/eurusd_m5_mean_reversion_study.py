@@ -177,7 +177,7 @@ def fast_backtest(
     max_bars: int,
     costs: CostConfig,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    timestamps = pd.to_datetime(data["datetime"]).to_numpy()
+    timestamps = data["datetime"].to_numpy()
     high = data["high"].to_numpy(dtype="float64")
     low = data["low"].to_numpy(dtype="float64")
     close = data["close"].to_numpy(dtype="float64")
