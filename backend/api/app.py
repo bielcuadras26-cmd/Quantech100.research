@@ -13,10 +13,17 @@ from pydantic import BaseModel
 
 from backend.ai.assistant import get_assistant_status, parse_research_prompt
 from backend.config import settings
+from backend.core.backtester import BacktestConfig, run_backtest
 from backend.core.cost_model import CostConfig
 from backend.core.data_loader import DataLoadError, load_csv, load_yahoo_finance
 from backend.core.data_validator import validate_ohlcv
+from backend.core.external_frameworks import (
+    quantstats_snapshot,
+    run_backtesting_py_ema_reversion,
+    run_vectorbt_signal_backtest,
+)
 from backend.core.montecarlo import run_monte_carlo
+from backend.core.metrics import calculate_metrics
 from backend.core.prop_firm_simulator import PRESETS, simulate_prop_firm
 from backend.core.research_engine import Hypothesis, run_ema_mean_reversion_research
 from backend.core.validation import (
@@ -24,6 +31,7 @@ from backend.core.validation import (
     run_walk_forward_validation,
     validation_to_dict,
 )
+from backend.strategies.ema_mean_reversion import generate_signals
 
 
 app = FastAPI(title="QuantTech100", version="0.5.0")
@@ -91,6 +99,15 @@ class ValidationRequest(BaseModel):
     slippage: float = 0.0
     fixed_cost: float = 0.0
     variable_rate: float = 0.0
+
+
+class ExternalFrameworkRequest(BaseModel):
+    dataset: str
+    ema_window: int = 100
+    atr_window: int = 14
+    distance_atr: float = 2.0
+    cash: float = 100_000.0
+    commission: float = 0.0005
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -215,6 +232,55 @@ def validation_endpoint(request: ValidationRequest) -> dict[str, Any]:
         )
         return validation_to_dict(walk_forward)
     raise HTTPException(status_code=400, detail="mode must be out_of_sample or walk_forward")
+
+
+@app.post("/external-check")
+def external_check_endpoint(request: ExternalFrameworkRequest) -> dict[str, Any]:
+    data = load_csv(_resolve_dataset(request.dataset))
+    backtesting_summary = run_backtesting_py_ema_reversion(
+        data,
+        ema_window=request.ema_window,
+        atr_window=request.atr_window,
+        distance_atr=request.distance_atr,
+        cash=request.cash,
+        commission=request.commission,
+    )
+    enriched, signals = generate_signals(
+        data,
+        ema_window=request.ema_window,
+        atr_window=request.atr_window,
+        distance_atr=request.distance_atr,
+    )
+    vectorbt_summary = run_vectorbt_signal_backtest(
+        enriched["close"],
+        signals["long_entry"],
+        signals["exit"],
+        init_cash=request.cash,
+        fees=request.commission,
+    )
+    quanttech_backtest = run_backtest(
+        enriched,
+        signals,
+        config=BacktestConfig(initial_capital=request.cash),
+        costs=CostConfig(
+            commission_per_unit=0.0,
+            variable_rate=request.commission,
+        ),
+    )
+    quanttech_metrics = calculate_metrics(
+        quanttech_backtest.trades_frame(),
+        quanttech_backtest.equity_curve,
+        initial_capital=request.cash,
+    )
+    return {
+        "quanttech100": {
+            "metrics": quanttech_metrics.__dict__,
+            "quantstats": quantstats_snapshot(quanttech_backtest.equity_curve),
+        },
+        "backtesting_py": backtesting_summary.__dict__,
+        "vectorbt": vectorbt_summary.__dict__,
+        "note": "External frameworks use different execution assumptions; compare directionally, not tick-for-tick.",
+    }
 
 
 @app.post("/run-montecarlo")

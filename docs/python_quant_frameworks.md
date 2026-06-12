@@ -37,3 +37,15 @@ External libraries have different assumptions for order timing, commissions, sto
 - `empyrical`: useful for Sharpe, Sortino, alpha/beta, drawdown, and returns validation.
 - `backtesting.py`: compact cross-check for event-driven strategy behavior.
 - `vectorbt`: powerful once parameter grids become large.
+
+## Current Project Integration
+
+Implemented:
+
+- `backtesting.py` adapter for EMA/ATR mean reversion cross-checks.
+- `vectorbt` adapter for fast signal-based backtests.
+- `quantstats` snapshot for external equity-curve metric validation.
+
+Not implemented:
+
+- `empyrical`, because the latest available package build fails on Python 3.13 due to an outdated build dependency path.

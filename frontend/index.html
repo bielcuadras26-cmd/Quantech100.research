@@ -157,6 +157,7 @@
           </label>
           <label>EMA Grid <input id="emaGrid" value="20,50,100" /></label>
           <button onclick="runValidation()">Run Validation</button>
+          <button onclick="externalCheck()">External Check</button>
         </div>
         <div class="panel wide">
           <h2>Results</h2>
@@ -219,6 +220,14 @@
           distance_atr_values: [0.5, 1.0],
           spread: Number(document.getElementById("spread").value),
           slippage: Number(document.getElementById("slippage").value)
+        });
+      }
+      async function externalCheck() {
+        await request("/external-check", {
+          dataset: document.getElementById("dataset").value,
+          ema_window: Number(document.getElementById("emaGrid").value.split(",")[0]),
+          atr_window: 3,
+          distance_atr: 0.5
         });
       }
       fetch("/health").then(r => r.json()).then(d => document.getElementById("health").textContent = d.status);
