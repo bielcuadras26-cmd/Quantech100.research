@@ -117,6 +117,8 @@ Implemented foundation:
 
 ## Phase 5 - Backtesting Engine
 
+Status: started.
+
 Core tasks:
 
 - Generic signal execution.
@@ -124,7 +126,15 @@ Core tasks:
 - Trade ledger.
 - MAE and MFE.
 
+Implemented foundation:
+
+- One-position-at-a-time event-driven engine.
+- Long and short entries, exits, SL, TP, time exits, end-of-data exits.
+- MAE, MFE, gross result, net result, gross R, net R, and costs per trade.
+
 ## Phase 6 - Metrics Engine
+
+Status: started.
 
 Core tasks:
 
@@ -133,7 +143,14 @@ Core tasks:
 - Distribution metrics.
 - Time-based breakdowns.
 
+Implemented foundation:
+
+- Trade count, win rate, profit factor, expectancy, return, drawdown, losing streak.
+- Sharpe, Sortino, recovery factor, and period breakdown helper.
+
 ## Phase 7 - Monte Carlo Engine
+
+Status: started.
 
 Core tasks:
 
@@ -142,7 +159,14 @@ Core tasks:
 - Drawdown estimates.
 - Risk of ruin and target probabilities.
 
+Implemented foundation:
+
+- Resampling from real trade R outcomes.
+- Final equity percentiles, expected/worst drawdown, ruin, target, and limit breach probabilities.
+
 ## Phase 8 - Prop Firm Simulator
+
+Status: started.
 
 Core tasks:
 
@@ -150,7 +174,14 @@ Core tasks:
 - Pass/fail probabilities.
 - Expected payout analysis.
 
+Implemented foundation:
+
+- FTMO, Topstep, FundingPips, Alpha Capital, Orion, and FundingNext presets.
+- Profit target, daily loss, total loss, risk per trade, and max daily trades.
+
 ## Phase 9 - Research Engine
+
+Status: started.
 
 Core tasks:
 
@@ -159,7 +190,14 @@ Core tasks:
 - Result comparison.
 - Research archive.
 
+Implemented foundation:
+
+- EMA/ATR mean-reversion research orchestration.
+- Backtest, metrics, Monte Carlo, prop firm, and report export pipeline.
+
 ## Phase 10 - Report Generator
+
+Status: started.
 
 Core tasks:
 
@@ -168,7 +206,13 @@ Core tasks:
 - Statistical summaries.
 - Simulation reports.
 
+Implemented foundation:
+
+- Trades CSV, summary JSON, equity curve, drawdown curve, and Net R histogram.
+
 ## Phase 11 - FastAPI
+
+Status: started.
 
 Core tasks:
 
@@ -178,19 +222,33 @@ Core tasks:
 - Run simulations.
 - Fetch results.
 
+Implemented foundation:
+
+- Local API endpoints for upload, Yahoo data, datasets, research runs, Monte Carlo, prop firm simulation, results, and AI status.
+
 ## Phase 12 - Frontend
 
-Deferred until backend correctness is validated.
+Status: started with a static local UI served by FastAPI.
 
 Target stack:
 
 - Next.js
 - Tailwind CSS
 
+Note: the current interface is intentionally lightweight so the local research workflow works immediately.
+
 ## Phase 13 - AI Research Assistant
+
+Status: prepared.
 
 Core tasks:
 
 - Natural language to structured research config.
 - Backend execution only.
 - Result-grounded explanations.
+
+Implemented foundation:
+
+- API key status detection.
+- Conservative prompt-to-config parser.
+- No invented research results.

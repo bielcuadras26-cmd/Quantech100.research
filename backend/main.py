@@ -1,11 +1,11 @@
-"""Application entrypoint for the current foundation milestone."""
-
-from backend.config import settings
+"""Application entrypoint for QuantTech100."""
 
 
 def main() -> None:
-    """Print a deterministic startup message for smoke verification."""
-    print(f"{settings.app_name} backend foundation ready")
+    """Run the local FastAPI application."""
+    import uvicorn
+
+    uvicorn.run("backend.api.app:app", host="127.0.0.1", port=8000, reload=False)
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ plotly>=5.22.0
 pyarrow>=16.1.0
 yfinance>=0.2.40
 python-dotenv>=1.0.1
+python-multipart>=0.0.20
 pytest>=8.2.0
 pytest-cov>=5.0.0
 ruff>=0.5.0

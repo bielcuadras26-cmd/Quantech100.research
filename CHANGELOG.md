@@ -11,3 +11,4 @@ All notable changes to QuantTech100 will be documented in this file.
 - Added Phase 2 data loading and OHLCV validation foundation.
 - Added Phase 3 indicator engine foundation.
 - Added Phase 4 cost model foundation.
+- Added backtesting, metrics, Monte Carlo, prop firm, research report, API, and local UI foundations.

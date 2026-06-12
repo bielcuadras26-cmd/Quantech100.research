@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QuantTech100</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f8fa;
+        --panel: #ffffff;
+        --text: #15191f;
+        --muted: #64707d;
+        --line: #d8dee6;
+        --accent: #0f766e;
+        --accent-strong: #0b5f59;
+        --danger: #b42318;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      header {
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 28px;
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+      }
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 28px;
+        display: grid;
+        gap: 18px;
+      }
+      h1, h2 { margin: 0; letter-spacing: 0; }
+      h1 { font-size: 22px; }
+      h2 { font-size: 16px; }
+      .subtle { color: var(--muted); font-size: 13px; }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+        display: grid;
+        gap: 12px;
+      }
+      label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+      input, select, textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 10px 12px;
+        font: inherit;
+        color: var(--text);
+        background: #fff;
+      }
+      textarea { min-height: 88px; resize: vertical; }
+      button {
+        border: 0;
+        border-radius: 6px;
+        padding: 10px 14px;
+        font-weight: 650;
+        background: var(--accent);
+        color: white;
+        cursor: pointer;
+      }
+      button:hover { background: var(--accent-strong); }
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: #101820;
+        color: #e6edf3;
+        border-radius: 8px;
+        padding: 14px;
+        min-height: 220px;
+        font-size: 12px;
+      }
+      .wide { grid-column: 1 / -1; }
+      @media (max-width: 860px) {
+        header { padding: 0 16px; }
+        main { padding: 16px; }
+        .grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>QuantTech100</h1>
+        <div class="subtle">Private quantitative research platform</div>
+      </div>
+      <div id="health" class="subtle">checking...</div>
+    </header>
+    <main>
+      <section class="grid">
+        <div class="panel">
+          <h2>Data Manager</h2>
+          <label>Yahoo Symbol <input id="symbol" value="SPY" /></label>
+          <label>Start <input id="start" value="2020-01-01" /></label>
+          <label>Interval <input id="interval" value="1d" /></label>
+          <button onclick="loadYahoo()">Load Yahoo</button>
+        </div>
+        <div class="panel">
+          <h2>Strategy Lab</h2>
+          <label>Dataset <input id="dataset" value="SPY_1d.csv" /></label>
+          <label>Asset <input id="asset" value="SPY" /></label>
+          <label>Risk Per Trade <input id="risk" type="number" step="0.001" value="0.01" /></label>
+          <button onclick="runBacktest()">Run Backtest</button>
+        </div>
+        <div class="panel">
+          <h2>Cost Model</h2>
+          <label>Spread <input id="spread" type="number" step="0.01" value="0.01" /></label>
+          <label>Commission / Unit <input id="commission" type="number" step="0.01" value="0" /></label>
+          <label>Slippage <input id="slippage" type="number" step="0.01" value="0.01" /></label>
+        </div>
+        <div class="panel">
+          <h2>AI Research Assistant</h2>
+          <textarea id="prompt">Analiza SPY diario. Distancia EMA100 de 2 ATR. Simula FTMO al 0.5%.</textarea>
+          <button onclick="parsePrompt()">Parse Prompt</button>
+          <div id="aiStatus" class="subtle"></div>
+        </div>
+        <div class="panel">
+          <h2>Monte Carlo</h2>
+          <label>Trade R CSV <input id="tradeR" value="1,-0.5,0.8,-1,1.4,0.2" /></label>
+          <button onclick="runMonteCarlo()">Run Monte Carlo</button>
+        </div>
+        <div class="panel">
+          <h2>Prop Firm Lab</h2>
+          <label>Preset
+            <select id="preset">
+              <option>FTMO</option><option>Topstep</option><option>FundingPips</option>
+              <option>Alpha Capital</option><option>Orion</option><option>FundingNext</option>
+            </select>
+          </label>
+          <button onclick="runPropFirm()">Run Simulation</button>
+        </div>
+        <div class="panel wide">
+          <h2>Results</h2>
+          <pre id="output"></pre>
+        </div>
+      </section>
+    </main>
+    <script>
+      const output = document.getElementById("output");
+      const jsonHeaders = { "Content-Type": "application/json" };
+      const show = (value) => output.textContent = JSON.stringify(value, null, 2);
+      const tradeR = () => document.getElementById("tradeR").value.split(",").map(Number);
+
+      async function request(path, body) {
+        const response = await fetch(path, { method: "POST", headers: jsonHeaders, body: JSON.stringify(body) });
+        const data = await response.json();
+        if (!response.ok) throw data;
+        show(data);
+        return data;
+      }
+      async function loadYahoo() {
+        await request("/load-yahoo", {
+          symbol: document.getElementById("symbol").value,
+          start: document.getElementById("start").value,
+          interval: document.getElementById("interval").value
+        });
+      }
+      async function runBacktest() {
+        await request("/run-backtest", {
+          dataset: document.getElementById("dataset").value,
+          asset: document.getElementById("asset").value,
+          risk_per_trade: Number(document.getElementById("risk").value),
+          spread: Number(document.getElementById("spread").value),
+          commission_per_unit: Number(document.getElementById("commission").value),
+          slippage: Number(document.getElementById("slippage").value),
+          monte_carlo_simulations: 1000
+        });
+      }
+      async function parsePrompt() {
+        await request("/ai/parse", { prompt: document.getElementById("prompt").value });
+      }
+      async function runMonteCarlo() {
+        await request("/run-montecarlo", { trade_r: tradeR(), simulations: 1000 });
+      }
+      async function runPropFirm() {
+        await request("/run-prop-firm-simulation", {
+          trade_r: tradeR(),
+          preset: document.getElementById("preset").value,
+          simulations: 1000
+        });
+      }
+      fetch("/health").then(r => r.json()).then(d => document.getElementById("health").textContent = d.status);
+      fetch("/ai/status").then(r => r.json()).then(d => document.getElementById("aiStatus").textContent = d.message);
+    </script>
+  </body>
+</html>
