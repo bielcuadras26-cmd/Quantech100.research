@@ -54,14 +54,17 @@ def load_mt5_export(path: str | Path, *, validate: bool = True) -> pd.DataFrame:
     if "<date>" in data.columns and "<time>" in data.columns:
         data["datetime"] = data["<date>"].astype(str) + " " + data["<time>"].astype(str)
 
+    if "<tickvol>" in data.columns:
+        data["volume"] = data["<tickvol>"]
+    elif "<vol>" in data.columns:
+        data["volume"] = data["<vol>"]
+
     data = data.rename(
         columns={
             "<open>": "open",
             "<high>": "high",
             "<low>": "low",
             "<close>": "close",
-            "<tickvol>": "volume",
-            "<vol>": "volume",
         }
     )
 

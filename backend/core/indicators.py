@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pandas as pd
+import numpy as np
 
 
 def returns(close: pd.Series, periods: int = 1) -> pd.Series:
@@ -189,13 +190,13 @@ def _validate_window(window: int) -> None:
 
 
 def _wilder_average(values: pd.Series, window: int) -> pd.Series:
-    result = pd.Series(index=values.index, dtype="float64")
-    if len(values) < window:
-        return result
+    raw_values = values.to_numpy(dtype="float64")
+    result = np.full(len(raw_values), np.nan, dtype="float64")
+    if len(raw_values) < window:
+        return pd.Series(result, index=values.index)
 
-    result.iloc[window - 1] = values.iloc[:window].mean()
-    for index in range(window, len(values)):
-        previous = result.iloc[index - 1]
-        result.iloc[index] = (previous * (window - 1) + values.iloc[index]) / window
+    result[window - 1] = float(np.nanmean(raw_values[:window]))
+    for index in range(window, len(raw_values)):
+        result[index] = (result[index - 1] * (window - 1) + raw_values[index]) / window
 
-    return result
+    return pd.Series(result, index=values.index)
