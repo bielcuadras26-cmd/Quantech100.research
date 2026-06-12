@@ -8,3 +8,4 @@ All notable changes to QuantTech100 will be documented in this file.
 - Added professional repository structure.
 - Added architecture, roadmap, and research framework documentation.
 - Added initial backend package boundaries and smoke tests.
+- Added Phase 2 data loading and OHLCV validation foundation.

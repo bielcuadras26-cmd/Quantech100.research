@@ -64,7 +64,7 @@ Deliverables:
 
 ## Phase 2 - Data Engine
 
-Implement only after Phase 1 is accepted.
+Status: started.
 
 Core tasks:
 
@@ -73,6 +73,14 @@ Core tasks:
 - MT5 export parser.
 - Dataset validation report.
 - Canonical OHLCV format.
+
+Implemented foundation:
+
+- Canonical OHLCV schema normalization.
+- CSV loader.
+- MT5 export loader.
+- Yahoo Finance adapter.
+- Chronology, datetime, missing value, duplicate, gap, and OHLC consistency validation.
 
 ## Phase 3 - Indicator Engine
 
