@@ -19,6 +19,11 @@ from backend.core.data_validator import validate_ohlcv
 from backend.core.montecarlo import run_monte_carlo
 from backend.core.prop_firm_simulator import PRESETS, simulate_prop_firm
 from backend.core.research_engine import Hypothesis, run_ema_mean_reversion_research
+from backend.core.validation import (
+    run_out_of_sample_validation,
+    run_walk_forward_validation,
+    validation_to_dict,
+)
 
 
 app = FastAPI(title="QuantTech100", version="0.5.0")
@@ -67,6 +72,25 @@ class PropFirmRequest(BaseModel):
 
 class AssistantRequest(BaseModel):
     prompt: str
+
+
+class ValidationRequest(BaseModel):
+    dataset: str
+    mode: str = "walk_forward"
+    train_ratio: float = 0.7
+    train_size: int = 252
+    test_size: int = 63
+    step_size: int | None = None
+    ema_windows: list[int] = [50, 100, 200]
+    atr_windows: list[int] = [14]
+    distance_atr_values: list[float] = [1.5, 2.0, 2.5]
+    initial_capital: float = 100_000.0
+    risk_per_trade: float = 0.01
+    spread: float = 0.0
+    commission_per_unit: float = 0.0
+    slippage: float = 0.0
+    fixed_cost: float = 0.0
+    variable_rate: float = 0.0
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -151,6 +175,46 @@ def run_backtest_endpoint(request: ResearchRequest) -> dict[str, Any]:
         monte_carlo_simulations=request.monte_carlo_simulations,
     )
     return summary
+
+
+@app.post("/run-validation")
+def validation_endpoint(request: ValidationRequest) -> dict[str, Any]:
+    data = load_csv(_resolve_dataset(request.dataset))
+    parameter_grid: dict[str, list[Any]] = {
+        "ema_window": request.ema_windows,
+        "atr_window": request.atr_windows,
+        "distance_atr": request.distance_atr_values,
+    }
+    costs = CostConfig(
+        spread=request.spread,
+        commission_per_unit=request.commission_per_unit,
+        slippage=request.slippage,
+        fixed_cost=request.fixed_cost,
+        variable_rate=request.variable_rate,
+    )
+    if request.mode == "out_of_sample":
+        out_of_sample = run_out_of_sample_validation(
+            data,
+            parameter_grid=parameter_grid,
+            train_ratio=request.train_ratio,
+            initial_capital=request.initial_capital,
+            risk_per_trade=request.risk_per_trade,
+            cost_config=costs,
+        )
+        return validation_to_dict(out_of_sample)
+    if request.mode == "walk_forward":
+        walk_forward = run_walk_forward_validation(
+            data,
+            parameter_grid=parameter_grid,
+            train_size=request.train_size,
+            test_size=request.test_size,
+            step_size=request.step_size,
+            initial_capital=request.initial_capital,
+            risk_per_trade=request.risk_per_trade,
+            cost_config=costs,
+        )
+        return validation_to_dict(walk_forward)
+    raise HTTPException(status_code=400, detail="mode must be out_of_sample or walk_forward")
 
 
 @app.post("/run-montecarlo")

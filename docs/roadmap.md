@@ -225,6 +225,7 @@ Core tasks:
 Implemented foundation:
 
 - Local API endpoints for upload, Yahoo data, datasets, research runs, Monte Carlo, prop firm simulation, results, and AI status.
+- Validation endpoint for out-of-sample and walk-forward testing.
 
 ## Phase 12 - Frontend
 

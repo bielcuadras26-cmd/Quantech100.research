@@ -147,6 +147,17 @@
           </label>
           <button onclick="runPropFirm()">Run Simulation</button>
         </div>
+        <div class="panel">
+          <h2>Validation Lab</h2>
+          <label>Mode
+            <select id="validationMode">
+              <option value="walk_forward">Walk-forward</option>
+              <option value="out_of_sample">Out-of-sample</option>
+            </select>
+          </label>
+          <label>EMA Grid <input id="emaGrid" value="20,50,100" /></label>
+          <button onclick="runValidation()">Run Validation</button>
+        </div>
         <div class="panel wide">
           <h2>Results</h2>
           <pre id="output"></pre>
@@ -195,6 +206,19 @@
           trade_r: tradeR(),
           preset: document.getElementById("preset").value,
           simulations: 1000
+        });
+      }
+      async function runValidation() {
+        await request("/run-validation", {
+          dataset: document.getElementById("dataset").value,
+          mode: document.getElementById("validationMode").value,
+          train_size: 12,
+          test_size: 5,
+          ema_windows: document.getElementById("emaGrid").value.split(",").map(Number),
+          atr_windows: [3, 5],
+          distance_atr_values: [0.5, 1.0],
+          spread: Number(document.getElementById("spread").value),
+          slippage: Number(document.getElementById("slippage").value)
         });
       }
       fetch("/health").then(r => r.json()).then(d => document.getElementById("health").textContent = d.status);
