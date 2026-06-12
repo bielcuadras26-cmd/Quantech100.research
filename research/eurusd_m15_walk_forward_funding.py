@@ -45,6 +45,23 @@ class FundingDurationResult:
     expected_profit: float
 
 
+@dataclass(frozen=True)
+class CalendarFundingDurationResult:
+    preset: str
+    risk: float
+    simulations: int
+    pass_probability: float
+    fail_probability: float
+    unresolved_probability: float
+    average_calendar_days_to_pass: float | None
+    median_calendar_days_to_pass: float | None
+    average_calendar_days_to_fail: float | None
+    average_trading_days_to_pass: float | None
+    median_trading_days_to_pass: float | None
+    expected_profit: float
+    average_trades_used: float
+
+
 def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     source = load_mt5_export(SOURCE)
@@ -80,6 +97,7 @@ def main() -> None:
     all_test_trades.to_csv(OUTPUT_DIR / "walk_forward_test_trades.csv", index=False)
 
     funding_rows = []
+    calendar_funding_rows = []
     if not all_test_trades.empty:
         for preset in ["FTMO", "FundingPips", "Alpha Capital", "FundingNext"]:
             for risk in [0.0025, 0.005, 0.0075, 0.01]:
@@ -91,10 +109,20 @@ def main() -> None:
                     simulations=5_000,
                 )
                 funding_rows.append(result.__dict__)
+                calendar_result = simulate_calendar_funding_duration(
+                    all_test_trades,
+                    rules=replace(PRESETS[preset], risk_per_trade=risk),
+                    preset=preset,
+                    risk=risk,
+                    simulations=5_000,
+                )
+                calendar_funding_rows.append(calendar_result.__dict__)
 
     funding_results = pd.DataFrame(funding_rows)
     funding_results.to_csv(OUTPUT_DIR / "funding_duration_simulations.csv", index=False)
-    write_summary(fold_results, all_test_trades, funding_results)
+    calendar_funding_results = pd.DataFrame(calendar_funding_rows)
+    calendar_funding_results.to_csv(OUTPUT_DIR / "calendar_funding_duration_simulations.csv", index=False)
+    write_summary(fold_results, all_test_trades, funding_results, calendar_funding_results)
 
 
 def build_quarterly_folds(
@@ -203,10 +231,101 @@ def simulate_funding_duration(
     )
 
 
+def simulate_calendar_funding_duration(
+    trades: pd.DataFrame,
+    *,
+    rules: PropFirmRules,
+    preset: str,
+    risk: float,
+    simulations: int,
+    seed: int = 42,
+) -> CalendarFundingDurationResult:
+    rng = np.random.default_rng(seed)
+    prepared = trades.copy()
+    prepared["exit_time"] = pd.to_datetime(prepared["exit_time"])
+    prepared["trade_date"] = prepared["exit_time"].dt.date
+    daily_groups = [
+        group["net_r"].astype(float).to_numpy()
+        for _, group in prepared.groupby("trade_date", sort=True)
+        if not group.empty
+    ]
+    if not daily_groups:
+        raise ValueError("trades must contain at least one dated trade")
+
+    max_calendar_days = 90
+    pass_calendar_days = []
+    fail_calendar_days = []
+    pass_trading_days = []
+    trades_used = []
+    profits = []
+    pass_events = 0
+    fail_events = 0
+    unresolved_events = 0
+
+    for _ in range(simulations):
+        equity = 100_000.0
+        passed = False
+        failed = False
+        trading_days = 0
+        trade_count = 0
+
+        for calendar_day in range(1, max_calendar_days + 1):
+            day_trades = daily_groups[int(rng.integers(0, len(daily_groups)))]
+            if len(day_trades) == 0:
+                continue
+            trading_days += 1
+            daily_pnl = 0.0
+
+            for outcome in day_trades[: rules.max_trades_daily]:
+                pnl = float(outcome) * rules.risk_per_trade * 100_000.0
+                equity += pnl
+                daily_pnl += pnl
+                trade_count += 1
+
+                if daily_pnl <= -rules.max_daily_loss * 100_000.0:
+                    failed = True
+                    fail_calendar_days.append(calendar_day)
+                    break
+                if equity <= 100_000.0 * (1 - rules.max_total_loss):
+                    failed = True
+                    fail_calendar_days.append(calendar_day)
+                    break
+                if equity >= 100_000.0 * (1 + rules.profit_target):
+                    passed = True
+                    pass_calendar_days.append(calendar_day)
+                    pass_trading_days.append(trading_days)
+                    break
+            if passed or failed:
+                break
+
+        pass_events += int(passed)
+        fail_events += int(failed)
+        unresolved_events += int(not passed and not failed)
+        profits.append(equity - 100_000.0)
+        trades_used.append(trade_count)
+
+    return CalendarFundingDurationResult(
+        preset=preset,
+        risk=risk,
+        simulations=simulations,
+        pass_probability=pass_events / simulations,
+        fail_probability=fail_events / simulations,
+        unresolved_probability=unresolved_events / simulations,
+        average_calendar_days_to_pass=float(np.mean(pass_calendar_days)) if pass_calendar_days else None,
+        median_calendar_days_to_pass=float(np.median(pass_calendar_days)) if pass_calendar_days else None,
+        average_calendar_days_to_fail=float(np.mean(fail_calendar_days)) if fail_calendar_days else None,
+        average_trading_days_to_pass=float(np.mean(pass_trading_days)) if pass_trading_days else None,
+        median_trading_days_to_pass=float(np.median(pass_trading_days)) if pass_trading_days else None,
+        expected_profit=float(np.mean(profits)),
+        average_trades_used=float(np.mean(trades_used)),
+    )
+
+
 def write_summary(
     folds: pd.DataFrame,
     trades: pd.DataFrame,
     funding: pd.DataFrame,
+    calendar_funding: pd.DataFrame,
 ) -> None:
     lines = [
         "# EURUSD M15 Walk-Forward Funding Study",
@@ -257,6 +376,13 @@ def write_summary(
         lines.append("No funding simulations generated.")
     else:
         display = funding.sort_values(["preset", "risk"])
+        lines.append(display.to_markdown(index=False))
+
+    lines.extend(["", "## Calendar-Real Funding Pass Duration", ""])
+    if calendar_funding.empty:
+        lines.append("No calendar-real funding simulations generated.")
+    else:
+        display = calendar_funding.sort_values(["preset", "risk"])
         lines.append(display.to_markdown(index=False))
 
     if not trades.empty:
