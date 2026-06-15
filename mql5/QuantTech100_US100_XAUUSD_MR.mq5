@@ -4,7 +4,7 @@
 //| IMPORTANT: copy the whole file into MetaEditor, not only a part. |
 //+------------------------------------------------------------------+
 #property strict
-#property version   "0.11"
+#property version   "1.10"
 
 #include <Trade/Trade.mqh>
 
@@ -65,7 +65,9 @@ int OnInit()
    ArrayResize(states, count);
    for(int i = 0; i < count; i++)
    {
-      string sym = Trim(symbols[i]);
+      string sym = symbols[i];
+      StringTrimLeft(sym);
+      StringTrimRight(sym);
       if(sym == "")
          continue;
 
@@ -379,12 +381,4 @@ void SaveDailyStopped()
 void SaveTradesToday()
 {
    GlobalVariableSet(daily_prefix + "trades_today", (double)trades_today);
-}
-
-//+------------------------------------------------------------------+
-string Trim(string value)
-{
-   value = StringTrimLeft(value);
-   value = StringTrimRight(value);
-   return value;
 }
