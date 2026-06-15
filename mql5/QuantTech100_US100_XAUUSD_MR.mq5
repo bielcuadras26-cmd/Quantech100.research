@@ -1,9 +1,10 @@
 //+------------------------------------------------------------------+
 //| QuantTech100 US100 + XAUUSD Mean Reversion EA                    |
 //| Research version. Test in demo/strategy tester before live use.  |
+//| IMPORTANT: copy the whole file into MetaEditor, not only a part. |
 //+------------------------------------------------------------------+
 #property strict
-#property version   "0.10"
+#property version   "0.11"
 
 #include <Trade/Trade.mqh>
 
@@ -47,7 +48,11 @@ int OnInit()
 {
    trade.SetExpertMagicNumber(InpMagic);
    trade.SetDeviationInPoints(InpSlippagePoints);
-   daily_prefix = StringFormat("QT100_%I64u_%I64u_", AccountInfoInteger(ACCOUNT_LOGIN), InpMagic);
+   daily_prefix = "QT100_"
+      + IntegerToString((long)AccountInfoInteger(ACCOUNT_LOGIN))
+      + "_"
+      + IntegerToString((long)InpMagic)
+      + "_";
 
    string symbols[];
    int count = StringSplit(InpSymbols, ',', symbols);
@@ -379,7 +384,7 @@ void SaveTradesToday()
 //+------------------------------------------------------------------+
 string Trim(string value)
 {
-   StringTrimLeft(value);
-   StringTrimRight(value);
+   value = StringTrimLeft(value);
+   value = StringTrimRight(value);
    return value;
 }
